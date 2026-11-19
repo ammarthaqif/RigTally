@@ -1,0 +1,6 @@
+{
+  "name": "RigTally",
+  "description": "High-performance drilling engineering workspace for conductor, casing, and tubing running tallies with make-up loss, segment weights, quantity planning, clipboard/Excel ingestion, and Excel/PDF export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
