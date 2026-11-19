@@ -53,13 +53,32 @@ function createInitialDocuments(): { docs: StringDocument[]; activeId: string } 
     if (saved) {
       const parsed = JSON.parse(saved) as { docs: StringDocument[]; activeId: string };
       if (Array.isArray(parsed.docs) && parsed.docs.length > 0) {
-        return {
-          docs: parsed.docs.map((d) => ({
-            ...d,
-            deckJoints: Array.isArray(d.deckJoints) ? d.deckJoints : [],
-          })),
-          activeId: parsed.activeId,
-        };
+        const normalizedDocs = parsed.docs
+          .filter((d) => d && d.config)
+          .map((d) => {
+            const mergedConfig: TallyConfig = {
+              ...DEFAULT_CONFIG,
+              ...d.config,
+              topConnection:
+                d.config.topConnection ?? d.config.connection ?? DEFAULT_CONFIG.topConnection,
+              bottomConnection:
+                d.config.bottomConnection ?? d.config.connection ?? DEFAULT_CONFIG.bottomConnection,
+            };
+            return {
+              config: mergedConfig,
+              rows: Array.isArray(d.rows) ? d.rows : [],
+              deckJoints: Array.isArray(d.deckJoints) ? d.deckJoints : [],
+            };
+          });
+        if (normalizedDocs.length > 0) {
+          const validActiveId = normalizedDocs.some((d) => d.config.id === parsed.activeId)
+            ? parsed.activeId
+            : normalizedDocs[0].config.id;
+          return {
+            docs: normalizedDocs,
+            activeId: validActiveId,
+          };
+        }
       }
     }
   } catch {
