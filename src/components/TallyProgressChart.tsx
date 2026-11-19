@@ -233,15 +233,11 @@ export const TallyProgressChart: React.FC<TallyProgressChartProps> = ({
     barGroups
       .append('rect')
       .attr('x', (d) => x(d.label) ?? 0)
-      .attr('y', innerHeight)
-      .attr('width', x.bandwidth())
-      .attr('height', 0)
-      .attr('rx', 3)
-      .attr('fill', (d) => d.color)
-      .transition()
-      .duration(220)
       .attr('y', (d) => y(d.value))
-      .attr('height', (d) => Math.max(0, innerHeight - y(d.value)));
+      .attr('width', x.bandwidth())
+      .attr('height', (d) => Math.max(0, innerHeight - y(d.value)))
+      .attr('rx', 3)
+      .attr('fill', (d) => d.color);
 
     // If hasHanger and Cum Length bar has Landing portion, overlay subtle top landing segment
     if (config.hasHanger && summary.landingEffectiveLength > 0) {
