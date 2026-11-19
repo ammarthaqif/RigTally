@@ -39,4 +39,4 @@ This repository is preconfigured with `vercel.json` and `api/index.ts` so the Re
 
 ## GitHub Actions CI
 
-`.github/workflows/ci.yml` automatically runs `npm ci`, `npm run lint`, and `npm run build` on every push and pull request targeting `main` or `master`.
+`.github/workflows/ci.yml` automatically runs `npm ci`, `npm run lint`, and `npm run build` on every push and pull request targeting `main` or `master`. Keep `package-lock.json` committed whenever updating `package.json` dependencies (`npm install --package-lock-only`) so Node caching and `npm ci` succeed in CI.
