@@ -4,7 +4,66 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
-import type { ComputedTallyResult, TallyConfig } from '../src/types/tally.ts';
+import { GoogleGenAI, Type } from '@google/genai';
+import type {
+  ComponentType,
+  ComputedTallyResult,
+  InspectionReportItem,
+  InspectionReportResult,
+  LengthUnit,
+  TallyConfig,
+} from '../src/types/tally.ts';
+
+function inferMimeType(file: Express.Multer.File): string {
+  const mime = (file.mimetype || '').toLowerCase();
+  const ext = (file.originalname || '').toLowerCase();
+  if (mime === 'application/pdf' || ext.endsWith('.pdf')) return 'application/pdf';
+  if (mime.startsWith('image/')) return mime;
+  if (ext.endsWith('.png')) return 'image/png';
+  if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
+  if (ext.endsWith('.webp')) return 'image/webp';
+  if (ext.endsWith('.gif')) return 'image/gif';
+  if (ext.endsWith('.heic')) return 'image/heic';
+  if (ext.endsWith('.tif') || ext.endsWith('.tiff')) return 'image/tiff';
+  return mime || 'application/octet-stream';
+}
+
+function normalizeComponentType(raw: unknown): ComponentType {
+  const s = String(raw ?? '').toLowerCase();
+  if (s.includes('pup')) return 'pup';
+  if (s.includes('xo') || s.includes('cross')) return 'xo';
+  if (s.includes('shoe')) return 'shoe';
+  if (s.includes('collar') || s.includes('float')) return 'collar';
+  if (s.includes('hanger') || s.includes('hgr')) return 'hanger';
+  if (s.includes('landing') || s.includes('lnd')) return 'landing';
+  if (s.includes('bha') || s.includes('packer') || s.includes('sub') || s.includes('stabilizer')) {
+    return 'bha';
+  }
+  return 'joint';
+}
+
+function normalizeUnit(raw: unknown): LengthUnit | 'unknown' {
+  const s = String(raw ?? '').toLowerCase().trim();
+  if (s === 'm' || s === 'meter' || s === 'meters' || s === 'metre' || s === 'metres') return 'm';
+  if (s === 'ft' || s === 'foot' || s === 'feet' || s === "'") return 'ft';
+  return 'unknown';
+}
+
+function normalizeSizeIn(label: string, rawNum: unknown): number | null {
+  const n = Number(rawNum);
+  if (Number.isFinite(n) && n > 0 && n < 100) return n;
+  const cleaned = label.replace(/["'″in]/gi, '').trim();
+  const mixed = cleaned.match(/^(\d+)\s*[-\s]\s*(\d+)\s*\/\s*(\d+)$/);
+  if (mixed) {
+    return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+  }
+  const frac = cleaned.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (frac) {
+    return Number(frac[1]) / Number(frac[2]);
+  }
+  const plain = Number(cleaned);
+  return Number.isFinite(plain) && plain > 0 && plain < 100 ? plain : null;
+}
 
 export function createApiApp(): Express {
   const app = express();
@@ -16,9 +75,218 @@ export function createApiApp(): Express {
     limits: { fileSize: 10 * 1024 * 1024 },
   });
 
+  const inspectionUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 },
+  });
+
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ ok: true });
   });
+
+  // Extract joint specs & tally lengths from uploaded inspection report snapshot (image) or PDF
+  app.post(
+    '/api/tally/parse-inspection',
+    inspectionUpload.single('file'),
+    async (req: Request, res: Response) => {
+      try {
+        if (!req.file) {
+          res.status(400).json({ error: 'No inspection report file uploaded.' });
+          return;
+        }
+
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        if (!apiKey) {
+          res.status(500).json({
+            error:
+              'GEMINI_API_KEY is not configured. Add it in environment settings to extract inspection reports.',
+          });
+          return;
+        }
+
+        const mimeType = inferMimeType(req.file);
+        const supported =
+          mimeType === 'application/pdf' || mimeType.startsWith('image/');
+        if (!supported) {
+          res.status(400).json({
+            error: `Unsupported file type (${mimeType}). Upload a PDF or image snapshot (PNG, JPG, WEBP).`,
+          });
+          return;
+        }
+
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: {
+            headers: {
+              'User-Agent': 'aistudio-build',
+            },
+          },
+        });
+
+        const base64Data = req.file.buffer.toString('base64');
+
+        const promptText =
+          'Extract every tubular / pipe / pup joint / crossover (XO) / accessory line item from this drilling pipe inspection report or tally sheet. ' +
+          'Capture report-level defaults (title, inspector company, length unit, OD size, weight in lb/ft, steel grade, connection) and every individual joint or item row with its exact measured length, top connection, bottom connection, serial/heat number, and pass/reject condition.';
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-4-hydrogen',
+          contents: {
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Data,
+                },
+              },
+              { text: promptText },
+            ],
+          },
+          config: {
+            systemInstruction:
+              'You are a drilling tubular inspection data extractor. Read OCTG / casing / tubing / conductor inspection reports, pipe tally sheets, pup joint certificates, and crossover (XO) logs accurately. ' +
+              'Never invent joints not present in the document. If top and bottom connections are listed as one connection (e.g. "VAM TOP"), put it in both topConnection and bottomConnection. If an XO or crossover shows two connections (e.g. "BTC Box x VAM TOP Pin" or "BTC / VAM TOP"), set bottomConnection and topConnection accordingly (or pin/box as labeled). If length unit is meters use "m", if feet use "ft", else "unknown". Set condition to "rejected" if marked Reject/Fail/Damaged/Scrap/No-Go, "repair" if marked Re-thread/Repair, otherwise "accepted". Keep remarks concise.',
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                reportTitle: { type: Type.STRING },
+                inspectorCompany: { type: Type.STRING },
+                detectedUnit: { type: Type.STRING },
+                detectedSizeLabel: { type: Type.STRING },
+                detectedSizeIn: { type: Type.NUMBER },
+                detectedWeightLbFt: { type: Type.NUMBER },
+                detectedGrade: { type: Type.STRING },
+                detectedConnection: { type: Type.STRING },
+                notes: { type: Type.STRING },
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      jointNo: { type: Type.STRING },
+                      componentType: { type: Type.STRING },
+                      sizeLabel: { type: Type.STRING },
+                      sizeIn: { type: Type.NUMBER },
+                      weightLbFt: { type: Type.NUMBER },
+                      grade: { type: Type.STRING },
+                      topConnection: { type: Type.STRING },
+                      bottomConnection: { type: Type.STRING },
+                      measuredLength: { type: Type.NUMBER },
+                      lengthUnit: { type: Type.STRING },
+                      serialNo: { type: Type.STRING },
+                      condition: { type: Type.STRING },
+                      remarks: { type: Type.STRING },
+                    },
+                    required: ['jointNo', 'measuredLength'],
+                  },
+                },
+              },
+              required: ['items'],
+            },
+          },
+        });
+
+        const rawJson = (response.text ?? '{}').trim();
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(rawJson) as Record<string, unknown>;
+        } catch {
+          res.status(502).json({
+            error: 'Could not parse structured joint data from the inspection report response.',
+          });
+          return;
+        }
+
+        const detectedUnit = normalizeUnit(parsed.detectedUnit);
+        const detectedSizeLabel = String(parsed.detectedSizeLabel ?? '').trim();
+        const detectedSizeIn = normalizeSizeIn(detectedSizeLabel, parsed.detectedSizeIn);
+        const rawWeight = Number(parsed.detectedWeightLbFt);
+        const detectedWeightLbFt =
+          Number.isFinite(rawWeight) && rawWeight > 0 ? rawWeight : null;
+        const detectedGrade = String(parsed.detectedGrade ?? '').trim();
+        const detectedConnection = String(parsed.detectedConnection ?? '').trim();
+
+        const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
+        const items: InspectionReportItem[] = rawItems
+          .map((itemRaw, idx): InspectionReportItem | null => {
+            if (!itemRaw || typeof itemRaw !== 'object') return null;
+            const r = itemRaw as Record<string, unknown>;
+            const len = Number(r.measuredLength);
+            if (!Number.isFinite(len) || len <= 0) return null;
+
+            const jointNo = String(r.jointNo ?? idx + 1).trim() || String(idx + 1);
+            const sizeLabel = String(r.sizeLabel ?? '').trim() || detectedSizeLabel;
+            const sizeIn = normalizeSizeIn(sizeLabel, r.sizeIn) ?? detectedSizeIn;
+            const wt = Number(r.weightLbFt);
+            const weightLbFt =
+              Number.isFinite(wt) && wt > 0 ? wt : detectedWeightLbFt;
+            const grade = String(r.grade ?? '').trim() || detectedGrade;
+            const topConn =
+              String(r.topConnection ?? '').trim() || detectedConnection;
+            const botConn =
+              String(r.bottomConnection ?? '').trim() || topConn || detectedConnection;
+            const itemUnit = normalizeUnit(r.lengthUnit);
+            const condRaw = String(r.condition ?? '').toLowerCase();
+            const condition: InspectionReportItem['condition'] = condRaw.includes('reject')
+              ? 'rejected'
+              : condRaw.includes('repair')
+                ? 'repair'
+                : 'accepted';
+            const remarks = String(r.remarks ?? '').trim();
+            const inferredType = normalizeComponentType(
+              `${r.componentType ?? ''} ${jointNo} ${remarks}`
+            );
+
+            return {
+              id: `insp_${Date.now()}_${idx}`,
+              jointNo,
+              componentType: inferredType,
+              sizeLabel,
+              sizeIn,
+              weightLbFt,
+              grade,
+              topConnection: topConn,
+              bottomConnection: botConn,
+              measuredLength: Number(len.toFixed(3)),
+              lengthUnit: itemUnit !== 'unknown' ? itemUnit : detectedUnit,
+              serialNo: String(r.serialNo ?? '').trim(),
+              condition,
+              remarks,
+            };
+          })
+          .filter((item): item is InspectionReportItem => item !== null);
+
+        if (items.length === 0) {
+          res.status(422).json({
+            error:
+              'No valid pipe joints with positive lengths were detected in this inspection report. Try cropping closer to the tally table or uploading a clearer PDF/image.',
+          });
+          return;
+        }
+
+        const result: InspectionReportResult = {
+          fileName: req.file.originalname || 'inspection-report',
+          reportTitle: String(parsed.reportTitle ?? '').trim() || 'Inspection Report',
+          inspectorCompany: String(parsed.inspectorCompany ?? '').trim(),
+          detectedUnit,
+          detectedSizeLabel,
+          detectedSizeIn,
+          detectedWeightLbFt,
+          detectedGrade,
+          detectedConnection,
+          notes: String(parsed.notes ?? '').trim(),
+          items,
+        };
+
+        res.json(result);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to extract inspection report.';
+        res.status(500).json({ error: message });
+      }
+    }
+  );
 
   // Parse uploaded Excel (.xlsx, .xls) or CSV file into structured columns & rows
   app.post('/api/tally/parse-excel', upload.single('file'), (req: Request, res: Response) => {

@@ -14,6 +14,7 @@ import {
   Ban,
   RotateCcw,
   AlertTriangle,
+  ScanText,
 } from 'lucide-react';
 import type {
   ComponentType,
@@ -49,6 +50,7 @@ interface TallyGridProps {
   onOpenBatchModal: () => void;
   onOpenPasteModal: () => void;
   onOpenExcelModal: () => void;
+  onOpenInspectionModal: () => void;
   onLoadSample: () => void;
 }
 
@@ -81,6 +83,7 @@ export const TallyGrid: React.FC<TallyGridProps> = ({
   onOpenBatchModal,
   onOpenPasteModal,
   onOpenExcelModal,
+  onOpenInspectionModal,
   onLoadSample,
 }) => {
   const [quickJointNo, setQuickJointNo] = useState('');
@@ -368,6 +371,14 @@ export const TallyGrid: React.FC<TallyGridProps> = ({
           >
             <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-700" />
             Import Excel
+          </button>
+          <button
+            type="button"
+            onClick={onOpenInspectionModal}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition-colors hover:bg-sky-100 whitespace-nowrap shrink-0"
+          >
+            <ScanText className="h-3.5 w-3.5 text-sky-700" />
+            Scan Report (PDF/Img)
           </button>
         </div>
 

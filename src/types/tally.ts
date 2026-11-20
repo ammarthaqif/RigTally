@@ -156,3 +156,66 @@ export interface PipePreset {
   defaultConnection: string;
   defaultMakeUpLossIn: number;
 }
+
+export interface LibraryItem {
+  id: string;
+  category: ComponentType;
+  itemCode: string;
+  description: string;
+  sizeLabel: string;
+  sizeIn: number;
+  weightLbFt: number;
+  grade: string;
+  topConnection: string;
+  bottomConnection: string;
+  measuredLength: number;
+  lengthUnit: LengthUnit;
+  quantityAvailable: number;
+  serialNo: string;
+  source: 'preset' | 'inspection' | 'manual';
+  remarks: string;
+}
+
+export interface TallyRecommendation {
+  id: string;
+  priority: 'critical' | 'high' | 'medium';
+  kind: 'xo' | 'pup-spaceout' | 'landing-spaceout' | 'joint-replenish' | 'float-equipment';
+  title: string;
+  reason: string;
+  libraryItem: LibraryItem;
+  insertAfterRowId?: string;
+  recommendedCount: number;
+  projectedDeltaLabel?: string;
+}
+
+export interface InspectionReportItem {
+  id: string;
+  jointNo: string;
+  componentType: ComponentType;
+  sizeLabel: string;
+  sizeIn: number | null;
+  weightLbFt: number | null;
+  grade: string;
+  topConnection: string;
+  bottomConnection: string;
+  measuredLength: number;
+  lengthUnit: LengthUnit | 'unknown';
+  serialNo: string;
+  condition: 'accepted' | 'rejected' | 'repair';
+  remarks: string;
+}
+
+export interface InspectionReportResult {
+  fileName: string;
+  reportTitle: string;
+  inspectorCompany: string;
+  detectedUnit: LengthUnit | 'unknown';
+  detectedSizeLabel: string;
+  detectedSizeIn: number | null;
+  detectedWeightLbFt: number | null;
+  detectedGrade: string;
+  detectedConnection: string;
+  notes: string;
+  items: InspectionReportItem[];
+}
+

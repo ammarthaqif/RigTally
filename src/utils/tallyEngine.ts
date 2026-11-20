@@ -6,9 +6,11 @@ import type {
   DeckJointItem,
   LayerPickupOrder,
   LengthUnit,
+  LibraryItem,
   MakeUpLossUnit,
   PipePreset,
   TallyConfig,
+  TallyRecommendation,
   TallyRowInput,
 } from '../types/tally';
 
@@ -1213,3 +1215,608 @@ export const SAMPLE_ROWS: TallyRowInput[] = [
     remarks: 'Top landing joint w/ cementing head stick-up',
   },
 ];
+
+export const DEFAULT_LIBRARY_ITEMS: LibraryItem[] = [
+  // Crossovers (XO)
+  {
+    id: 'lib-xo-958-btc-vamtop',
+    category: 'xo',
+    itemCode: 'XO-958-BV',
+    description: '9-5/8" Crossover Sub (BTC Btm × VAM TOP Top)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'VAM TOP',
+    bottomConnection: 'BTC',
+    measuredLength: 0.55,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'XO-958-01',
+    source: 'preset',
+    remarks: 'Rig basket · BTC Pin × VAM TOP Box',
+  },
+  {
+    id: 'lib-xo-958-vamtop-btc',
+    category: 'xo',
+    itemCode: 'XO-958-VB',
+    description: '9-5/8" Crossover Sub (VAM TOP Btm × BTC Top)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'VAM TOP',
+    measuredLength: 0.55,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'XO-958-02',
+    source: 'preset',
+    remarks: 'Rig basket · VAM TOP Pin × BTC Box',
+  },
+  {
+    id: 'lib-xo-958-btc-prem',
+    category: 'xo',
+    itemCode: 'XO-958-BP',
+    description: '9-5/8" Crossover Sub (BTC Btm × Premium Top)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'Premium',
+    bottomConnection: 'BTC',
+    measuredLength: 0.52,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'XO-958-03',
+    source: 'preset',
+    remarks: 'Rig basket · BTC × Premium',
+  },
+  {
+    id: 'lib-xo-7-vam21-btc',
+    category: 'xo',
+    itemCode: 'XO-700-V2B',
+    description: '7" Crossover Sub (VAM 21 Btm × BTC Top)',
+    sizeLabel: '7',
+    sizeIn: 7,
+    weightLbFt: 29,
+    grade: 'P-110',
+    topConnection: 'BTC',
+    bottomConnection: 'VAM 21',
+    measuredLength: 0.48,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'XO-700-01',
+    source: 'preset',
+    remarks: 'Liner XO sub',
+  },
+  {
+    id: 'lib-xo-350-eue-vamtop',
+    category: 'xo',
+    itemCode: 'XO-350-EV',
+    description: '3-1/2" Tubing XO (EUE 8RD Btm × VAM TOP Top)',
+    sizeLabel: '3-1/2',
+    sizeIn: 3.5,
+    weightLbFt: 9.3,
+    grade: 'L-80 13Cr',
+    topConnection: 'VAM TOP',
+    bottomConnection: 'EUE 8RD',
+    measuredLength: 0.42,
+    lengthUnit: 'm',
+    quantityAvailable: 3,
+    serialNo: 'XO-350-01',
+    source: 'preset',
+    remarks: 'Completion basket',
+  },
+
+  // 9-5/8" Pup Joints
+  {
+    id: 'lib-pup-958-1m',
+    category: 'pup',
+    itemCode: 'PUP-958-100',
+    description: '9-5/8" 47# L-80 BTC Pup Joint (1.00 m)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 1.0,
+    lengthUnit: 'm',
+    quantityAvailable: 3,
+    serialNo: 'PUP-958-1M',
+    source: 'preset',
+    remarks: 'Space-out rack',
+  },
+  {
+    id: 'lib-pup-958-2m',
+    category: 'pup',
+    itemCode: 'PUP-958-200',
+    description: '9-5/8" 47# L-80 BTC Pup Joint (2.00 m)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 2.0,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'PUP-958-2M',
+    source: 'preset',
+    remarks: 'Space-out rack',
+  },
+  {
+    id: 'lib-pup-958-3m',
+    category: 'pup',
+    itemCode: 'PUP-958-300',
+    description: '9-5/8" 47# L-80 BTC Pup Joint (3.00 m)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 3.0,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'PUP-958-3M',
+    source: 'preset',
+    remarks: 'Space-out rack',
+  },
+  {
+    id: 'lib-pup-958-6m',
+    category: 'pup',
+    itemCode: 'PUP-958-610',
+    description: '9-5/8" 47# L-80 BTC Pup Joint (6.10 m)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 6.1,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'PUP-958-6M',
+    source: 'preset',
+    remarks: 'Space-out rack',
+  },
+
+  // 7" Pup Joints
+  {
+    id: 'lib-pup-7-150',
+    category: 'pup',
+    itemCode: 'PUP-700-150',
+    description: '7" 29# P-110 VAM 21 Pup Joint (1.50 m)',
+    sizeLabel: '7',
+    sizeIn: 7,
+    weightLbFt: 29,
+    grade: 'P-110',
+    topConnection: 'VAM 21',
+    bottomConnection: 'VAM 21',
+    measuredLength: 1.5,
+    lengthUnit: 'm',
+    quantityAvailable: 3,
+    serialNo: 'PUP-700-15',
+    source: 'preset',
+    remarks: 'Liner space-out',
+  },
+  {
+    id: 'lib-pup-7-300',
+    category: 'pup',
+    itemCode: 'PUP-700-300',
+    description: '7" 29# P-110 VAM 21 Pup Joint (3.00 m)',
+    sizeLabel: '7',
+    sizeIn: 7,
+    weightLbFt: 29,
+    grade: 'P-110',
+    topConnection: 'VAM 21',
+    bottomConnection: 'VAM 21',
+    measuredLength: 3.0,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'PUP-700-30',
+    source: 'preset',
+    remarks: 'Liner space-out',
+  },
+
+  // 3-1/2" Tubing Pups
+  {
+    id: 'lib-pup-350-120',
+    category: 'pup',
+    itemCode: 'PUP-350-120',
+    description: '3-1/2" 9.3# L-80 13Cr EUE 8RD Pup (1.20 m)',
+    sizeLabel: '3-1/2',
+    sizeIn: 3.5,
+    weightLbFt: 9.3,
+    grade: 'L-80 13Cr',
+    topConnection: 'EUE 8RD',
+    bottomConnection: 'EUE 8RD',
+    measuredLength: 1.2,
+    lengthUnit: 'm',
+    quantityAvailable: 4,
+    serialNo: 'PUP-350-12',
+    source: 'preset',
+    remarks: 'Tubing space-out basket',
+  },
+  {
+    id: 'lib-pup-350-240',
+    category: 'pup',
+    itemCode: 'PUP-350-240',
+    description: '3-1/2" 9.3# L-80 13Cr EUE 8RD Pup (2.40 m)',
+    sizeLabel: '3-1/2',
+    sizeIn: 3.5,
+    weightLbFt: 9.3,
+    grade: 'L-80 13Cr',
+    topConnection: 'EUE 8RD',
+    bottomConnection: 'EUE 8RD',
+    measuredLength: 2.4,
+    lengthUnit: 'm',
+    quantityAvailable: 3,
+    serialNo: 'PUP-350-24',
+    source: 'preset',
+    remarks: 'Tubing space-out basket',
+  },
+
+  // Standard Full Joints & Float Equipment
+  {
+    id: 'lib-jnt-958-btc',
+    category: 'joint',
+    itemCode: 'JTS-958-47B',
+    description: '9-5/8" 47# L-80 BTC Range 3 Casing Joint',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 12.18,
+    lengthUnit: 'm',
+    quantityAvailable: 24,
+    serialNo: 'YARD-958-R3',
+    source: 'preset',
+    remarks: 'Inspected prime R3 rack',
+  },
+  {
+    id: 'lib-jnt-958-vamtop',
+    category: 'joint',
+    itemCode: 'JTS-958-47V',
+    description: '9-5/8" 47# L-80 VAM TOP Range 3 Casing Joint',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 47,
+    grade: 'L-80',
+    topConnection: 'VAM TOP',
+    bottomConnection: 'VAM TOP',
+    measuredLength: 12.15,
+    lengthUnit: 'm',
+    quantityAvailable: 12,
+    serialNo: 'YARD-958-VT',
+    source: 'preset',
+    remarks: 'Inspected premium rack',
+  },
+  {
+    id: 'lib-jnt-1338-btc',
+    category: 'joint',
+    itemCode: 'JTS-1338-68B',
+    description: '13-3/8" 68# N-80 BTC Range 3 Casing Joint',
+    sizeLabel: '13-3/8',
+    sizeIn: 13.375,
+    weightLbFt: 68,
+    grade: 'N-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 12.1,
+    lengthUnit: 'm',
+    quantityAvailable: 18,
+    serialNo: 'YARD-1338',
+    source: 'preset',
+    remarks: 'Surface casing bay',
+  },
+  {
+    id: 'lib-jnt-20-btc',
+    category: 'joint',
+    itemCode: 'JTS-20-133B',
+    description: '20" 133# K-55 BTC Conductor Joint',
+    sizeLabel: '20',
+    sizeIn: 20,
+    weightLbFt: 133,
+    grade: 'K-55',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 12.12,
+    lengthUnit: 'm',
+    quantityAvailable: 10,
+    serialNo: 'YARD-20',
+    source: 'preset',
+    remarks: 'Conductor bay',
+  },
+  {
+    id: 'lib-jnt-350-eue',
+    category: 'joint',
+    itemCode: 'JTS-350-93E',
+    description: '3-1/2" 9.3# L-80 13Cr EUE 8RD Tubing Joint',
+    sizeLabel: '3-1/2',
+    sizeIn: 3.5,
+    weightLbFt: 9.3,
+    grade: 'L-80 13Cr',
+    topConnection: 'EUE 8RD',
+    bottomConnection: 'EUE 8RD',
+    measuredLength: 9.55,
+    lengthUnit: 'm',
+    quantityAvailable: 30,
+    serialNo: 'YARD-350',
+    source: 'preset',
+    remarks: 'Range 2 tubing rack',
+  },
+  {
+    id: 'lib-shoe-958',
+    category: 'shoe',
+    itemCode: 'SHOE-958-DV',
+    description: '9-5/8" Double Valve Float Shoe (BTC Box Up)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 55,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 0.65,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'FS-958-LIB',
+    source: 'preset',
+    remarks: 'PDC drillable',
+  },
+  {
+    id: 'lib-collar-958',
+    category: 'collar',
+    itemCode: 'FC-958-TL',
+    description: '9-5/8" Float Collar w/ Auto-Fill (BTC)',
+    sizeLabel: '9-5/8',
+    sizeIn: 9.625,
+    weightLbFt: 55,
+    grade: 'L-80',
+    topConnection: 'BTC',
+    bottomConnection: 'BTC',
+    measuredLength: 0.58,
+    lengthUnit: 'm',
+    quantityAvailable: 2,
+    serialNo: 'FC-958-LIB',
+    source: 'preset',
+    remarks: 'Float equipment locker',
+  },
+];
+
+export function libraryItemToTallyRow(
+  item: LibraryItem,
+  targetUnit: LengthUnit,
+  jointNoOverride?: string,
+  remarksOverride?: string
+): TallyRowInput {
+  const len = convertLength(item.measuredLength, item.lengthUnit, targetUnit);
+  const roundedLen = Number(len.toFixed(3));
+  const defaultPrefix =
+    item.category === 'xo'
+      ? 'XO'
+      : item.category === 'pup'
+        ? 'PUP'
+        : item.category === 'shoe'
+          ? 'SHOE'
+          : item.category === 'collar'
+            ? 'FC'
+            : item.category === 'hanger'
+              ? 'HGR'
+              : item.category === 'landing'
+                ? 'LND'
+                : item.itemCode;
+
+  return {
+    id: createId(),
+    jointNo: jointNoOverride ?? defaultPrefix,
+    componentType: item.category,
+    measuredLength: roundedLen,
+    makeUpLossOverride: item.category === 'shoe' ? 0 : null,
+    weightLbFtOverride: item.weightLbFt > 0 ? item.weightLbFt : null,
+    gradeOverride: item.grade || '',
+    topConnectionOverride: item.topConnection || '',
+    bottomConnectionOverride: item.bottomConnection || '',
+    connectionOverride:
+      item.topConnection === item.bottomConnection
+        ? item.topConnection
+        : `${item.bottomConnection} x ${item.topConnection}`,
+    serialNo: item.serialNo || '',
+    remarks: remarksOverride ?? (item.remarks || item.description),
+    discarded: false,
+  };
+}
+
+export function recommendLibraryItems(
+  config: TallyConfig,
+  computed: ComputedTallyResult,
+  library: LibraryItem[]
+): TallyRecommendation[] {
+  const recommendations: TallyRecommendation[] = [];
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+  const available = library.filter((item) => item.quantityAvailable > 0 && item.measuredLength > 0);
+  const sizeMatches = (item: LibraryItem) =>
+    item.sizeIn <= 0 ||
+    config.pipeSizeIn <= 0 ||
+    Math.abs(item.sizeIn - config.pipeSizeIn) <= 0.25;
+
+  const muLoss = convertMakeUpLossToLengthUnit(
+    config.defaultMakeUpLoss,
+    config.makeUpLossUnit,
+    config.lengthUnit
+  );
+
+  // 1. Critical: Match Crossover (XO) items from library for active connection mismatches
+  for (const alert of computed.crossoverAlerts) {
+    const reqBot = norm(alert.xoBottomConnection);
+    const reqTop = norm(alert.xoTopConnection);
+    const xoMatch =
+      available.find(
+        (item) =>
+          item.category === 'xo' &&
+          sizeMatches(item) &&
+          norm(item.bottomConnection) === reqBot &&
+          norm(item.topConnection) === reqTop
+      ) ||
+      available.find(
+        (item) =>
+          item.category === 'xo' &&
+          norm(item.bottomConnection) === reqBot &&
+          norm(item.topConnection) === reqTop
+      );
+
+    if (xoMatch) {
+      recommendations.push({
+        id: `rec-xo-${alert.id}-${xoMatch.id}`,
+        priority: 'critical',
+        kind: 'xo',
+        title: `Insert ${xoMatch.itemCode} (${xoMatch.bottomConnection} Btm × ${xoMatch.topConnection} Top)`,
+        reason: `Bridges Jt #${alert.fromJointNo} ${alert.fromEnd} (${alert.fromConnection}) to Jt #${alert.toJointNo} ${alert.toEnd} (${alert.toConnection})`,
+        libraryItem: xoMatch,
+        insertAfterRowId: alert.afterRowId,
+        recommendedCount: 1,
+      });
+    }
+  }
+
+  // 2. Float equipment check for casing & conductor strings
+  if (config.stringCategory !== 'tubing') {
+    const hasShoe = computed.rows.some((r) => !r.discarded && r.componentType === 'shoe');
+    const hasCollar = computed.rows.some((r) => !r.discarded && r.componentType === 'collar');
+
+    if (!hasShoe) {
+      const shoeItem = available.find((i) => i.category === 'shoe' && sizeMatches(i));
+      if (shoeItem) {
+        recommendations.push({
+          id: `rec-shoe-${shoeItem.id}`,
+          priority: 'high',
+          kind: 'float-equipment',
+          title: `Add ${shoeItem.description}`,
+          reason: 'No active Float Shoe in running tally yet',
+          libraryItem: shoeItem,
+          recommendedCount: 1,
+        });
+      }
+    }
+
+    if (!hasCollar) {
+      const collarItem = available.find((i) => i.category === 'collar' && sizeMatches(i));
+      if (collarItem) {
+        recommendations.push({
+          id: `rec-collar-${collarItem.id}`,
+          priority: 'medium',
+          kind: 'float-equipment',
+          title: `Add ${collarItem.description}`,
+          reason: 'No active Float Collar in running tally yet',
+          libraryItem: collarItem,
+          recommendedCount: 1,
+        });
+      }
+    }
+  }
+
+  // 3. Space-out Pup Joint or Full Joint Replenishment based on targetDelta
+  const targetShoeDepth = getTargetShoeDepth(config);
+  const gap = computed.summary.targetDelta;
+  const avgJtLen =
+    computed.summary.averageJointLength > 0
+      ? computed.summary.averageJointLength
+      : config.lengthUnit === 'm'
+        ? 12.1
+        : 39.7;
+
+  if (targetShoeDepth > 0 && gap > 0.2) {
+    const sizeMatchingPups = available
+      .filter((i) => i.category === 'pup' && sizeMatches(i))
+      .map((item) => {
+        const lenInUnit = convertLength(item.measuredLength, item.lengthUnit, config.lengthUnit);
+        const netLen = Math.max(0, lenInUnit - muLoss);
+        const residual = gap - netLen;
+        return { item, lenInUnit, netLen, residual };
+      })
+      .filter((p) => p.netLen > 0);
+
+    // Prefer pups when gap is within 1 full joint + small margin, or as space-out finisher
+    if (sizeMatchingPups.length > 0 && gap <= avgJtLen + 0.5) {
+      const fittingPups = sizeMatchingPups
+        .filter((p) => p.residual >= -0.35)
+        .sort((a, b) => Math.abs(a.residual) - Math.abs(b.residual));
+
+      const bestPup = fittingPups[0] ?? sizeMatchingPups.sort((a, b) => Math.abs(a.residual) - Math.abs(b.residual))[0];
+      if (bestPup) {
+        recommendations.push({
+          id: `rec-pup-spaceout-${bestPup.item.id}`,
+          priority: 'high',
+          kind: 'pup-spaceout',
+          title: `Space-out with ${bestPup.item.itemCode} (${formatNum(bestPup.lenInUnit, 2)} ${config.lengthUnit})`,
+          reason: `Shoe Target gap is ${formatNum(gap, 2)} ${config.lengthUnit}. Adding this pup leaves ${formatNum(bestPup.residual, 2)} ${config.lengthUnit} delta.`,
+          libraryItem: bestPup.item,
+          recommendedCount: 1,
+          projectedDeltaLabel: `${bestPup.residual >= 0 ? '+' : ''}${formatNum(bestPup.residual, 2)} ${config.lengthUnit}`,
+        });
+      }
+    }
+
+    // Full joint recommendation if gap >= 0.75 * avgJtLen
+    const matchingJoints = available.filter(
+      (i) => i.category === 'joint' && sizeMatches(i)
+    );
+    if (matchingJoints.length > 0 && gap >= avgJtLen * 0.7) {
+      const defTop = norm(config.topConnection || config.connection);
+      const bestJoint =
+        matchingJoints.find((j) => norm(j.topConnection) === defTop) ?? matchingJoints[0];
+      const netJtLen = Math.max(
+        0.1,
+        convertLength(bestJoint.measuredLength, bestJoint.lengthUnit, config.lengthUnit) - muLoss
+      );
+      const countNeeded = Math.max(1, Math.min(bestJoint.quantityAvailable, Math.floor(gap / netJtLen)));
+
+      recommendations.push({
+        id: `rec-joint-${bestJoint.id}`,
+        priority: gap > avgJtLen ? 'high' : 'medium',
+        kind: 'joint-replenish',
+        title: `Add ${countNeeded}× ${bestJoint.sizeLabel}" ${bestJoint.weightLbFt}# ${bestJoint.grade} (${bestJoint.topConnection})`,
+        reason: `Remaining to Shoe Target: ${formatNum(gap, 2)} ${config.lengthUnit} (~${Math.ceil(gap / netJtLen)} joints of ${formatNum(netJtLen, 2)} ${config.lengthUnit} net). Stock: ${bestJoint.quantityAvailable}`,
+        libraryItem: bestJoint,
+        recommendedCount: countNeeded,
+      });
+    }
+  }
+
+  // 4. Hanger stick-up space-out recommendation
+  if (
+    config.hasHanger &&
+    config.hangerDepth > 0 &&
+    computed.summary.landingEffectiveLength > 0 &&
+    computed.summary.stickupDeltaFromTarget < -0.25
+  ) {
+    const neededStickup = Math.abs(computed.summary.stickupDeltaFromTarget);
+    const pups = available
+      .filter((i) => i.category === 'pup' && sizeMatches(i))
+      .map((item) => {
+        const lenInUnit = convertLength(item.measuredLength, item.lengthUnit, config.lengthUnit);
+        const netLen = Math.max(0, lenInUnit - muLoss);
+        return { item, lenInUnit, diff: Math.abs(neededStickup - netLen) };
+      })
+      .sort((a, b) => a.diff - b.diff);
+
+    if (pups[0]) {
+      recommendations.push({
+        id: `rec-landing-pup-${pups[0].item.id}`,
+        priority: 'high',
+        kind: 'landing-spaceout',
+        title: `Landing Space-Out: ${pups[0].item.itemCode} (${formatNum(pups[0].lenInUnit, 2)} ${config.lengthUnit})`,
+        reason: `Cementing head stick-up is ${formatNum(neededStickup, 2)} ${config.lengthUnit} short of ${formatNum(config.hangerStickupTarget, 2)} ${config.lengthUnit} target.`,
+        libraryItem: pups[0].item,
+        recommendedCount: 1,
+      });
+    }
+  }
+
+  return recommendations;
+}
+

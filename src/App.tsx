@@ -12,12 +12,15 @@ import {
 import type {
   DeckJointItem,
   LengthUnit,
+  LibraryItem,
   RunOrder,
   TallyConfig,
+  TallyRecommendation,
   TallyRowInput,
 } from './types/tally';
 import {
   DEFAULT_CONFIG,
+  DEFAULT_LIBRARY_ITEMS,
   PIPE_PRESETS,
   SAMPLE_DECK_JOINTS,
   SAMPLE_ROWS,
@@ -25,19 +28,24 @@ import {
   convertLength,
   createId,
   formatNum,
+  libraryItemToTallyRow,
+  recommendLibraryItems,
 } from './utils/tallyEngine';
 import { StringParamBar } from './components/StringParamBar';
 import { SummaryStrip } from './components/SummaryStrip';
 import { TallyGrid } from './components/TallyGrid';
 import { TallyProgressChart } from './components/TallyProgressChart';
 import { CantileverDeckView } from './components/CantileverDeckView';
+import { EquipmentLibraryView } from './components/EquipmentLibraryView';
+import { LibraryRecommendationsCard } from './components/LibraryRecommendationsCard';
 import { QuantityPlanner } from './components/QuantityPlanner';
 import { WellSpecsView } from './components/WellSpecsView';
 import { ImportExcelModal } from './components/ImportExcelModal';
+import { ImportInspectionModal } from './components/ImportInspectionModal';
 import { PasteTallyModal } from './components/PasteTallyModal';
 import { BatchAddModal } from './components/BatchAddModal';
 
-type WorkspaceTab = 'tally' | 'deck' | 'quantity' | 'specs';
+type WorkspaceTab = 'tally' | 'deck' | 'library' | 'quantity' | 'specs';
 
 interface StringDocument {
   config: TallyConfig;
@@ -46,6 +54,22 @@ interface StringDocument {
 }
 
 const STORAGE_KEY = 'rigtally_workspace_v2';
+const LIBRARY_STORAGE_KEY = 'rigtally_library_v1';
+
+function createInitialLibrary(): LibraryItem[] {
+  try {
+    const saved = localStorage.getItem(LIBRARY_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter((item) => item && item.id && item.measuredLength > 0);
+      }
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return DEFAULT_LIBRARY_ITEMS;
+}
 
 function createInitialDocuments(): { docs: StringDocument[]; activeId: string } {
   try {
@@ -288,6 +312,7 @@ export default function App() {
   const initial = useMemo(() => createInitialDocuments(), []);
   const [docs, setDocs] = useState<StringDocument[]>(initial.docs);
   const [activeId, setActiveId] = useState<string>(initial.activeId);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>(() => createInitialLibrary());
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('tally');
 
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -295,6 +320,7 @@ export default function App() {
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [excelModalOpen, setExcelModalOpen] = useState(false);
+  const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
   const [pasteModalOpen, setPasteModalOpen] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
@@ -306,6 +332,7 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ docs, activeId }));
+      localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(libraryItems));
       if (hasMountedStorageRef.current) {
         setSavedVisible(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -318,7 +345,7 @@ export default function App() {
     } catch {
       // ignore quota errors
     }
-  }, [docs, activeId]);
+  }, [docs, activeId, libraryItems]);
 
   useEffect(() => {
     return () => {
@@ -350,6 +377,11 @@ export default function App() {
   const computed = useMemo(
     () => computeTally(activeDoc.config, activeDoc.rows),
     [activeDoc.config, activeDoc.rows]
+  );
+
+  const libraryRecommendations = useMemo(
+    () => recommendLibraryItems(activeDoc.config, computed, libraryItems),
+    [activeDoc.config, computed, libraryItems]
   );
 
   const nextJointNumber = useMemo(() => {
@@ -510,6 +542,64 @@ export default function App() {
     updateActiveDoc((d) => ({ ...d, rows: [] }));
   };
 
+  const handleSaveToLibrary = (newItems: LibraryItem[]) => {
+    if (newItems.length === 0) return;
+    setLibraryItems((prev) => [...newItems, ...prev]);
+    setNotice({
+      type: 'success',
+      text: `Saved ${newItems.length} item${newItems.length === 1 ? '' : 's'} to Pipe & XO Library.`,
+    });
+  };
+
+  const handleAddLibraryItemToTally = (
+    item: LibraryItem,
+    count = 1,
+    insertAfterRowId?: string
+  ) => {
+    const qty = Math.max(1, count);
+    const rowsToAdd: TallyRowInput[] = [];
+    let jtCursor = nextJointNumber;
+
+    for (let i = 0; i < qty; i++) {
+      const jointTag =
+        item.category === 'joint'
+          ? String(jtCursor++)
+          : item.category === 'xo'
+            ? item.itemCode.startsWith('XO')
+              ? item.itemCode
+              : 'XO'
+            : item.itemCode;
+      rowsToAdd.push(libraryItemToTallyRow(item, activeDoc.config.lengthUnit, jointTag));
+    }
+
+    if (insertAfterRowId && rowsToAdd.length === 1) {
+      handleAddRow(rowsToAdd[0], insertAfterRowId);
+    } else {
+      handleAddBatchRows(rowsToAdd, 'append');
+    }
+
+    setLibraryItems((prev) =>
+      prev.map((lib) =>
+        lib.id === item.id
+          ? { ...lib, quantityAvailable: Math.max(0, lib.quantityAvailable - qty) }
+          : lib
+      )
+    );
+
+    setNotice({
+      type: 'success',
+      text: `Added ${qty}× ${item.itemCode} from library to running tally.`,
+    });
+  };
+
+  const handleApplyRecommendation = (rec: TallyRecommendation) => {
+    handleAddLibraryItemToTally(
+      rec.libraryItem,
+      rec.recommendedCount,
+      rec.insertAfterRowId
+    );
+  };
+
   const handleCreateString = () => {
     const newId = createId();
     const newDoc: StringDocument = {
@@ -608,6 +698,7 @@ export default function App() {
               [
                 { id: 'tally', label: 'Running Tally' },
                 { id: 'deck', label: 'Cantilever Deck' },
+                { id: 'library', label: 'Pipe & XO Library' },
                 { id: 'quantity', label: 'Quantity Planner' },
                 { id: 'specs', label: 'Well & Pipe Specs' },
               ] as Array<{ id: WorkspaceTab; label: string }>
@@ -673,12 +764,13 @@ export default function App() {
       {/* Main Workspace */}
       <main className="mx-auto max-w-[1440px] space-y-4 px-4 pt-4 sm:px-6">
         {/* Mobile Tab Switcher */}
-        <div className="grid grid-cols-4 gap-1 rounded-md border border-slate-200 bg-slate-100 p-1 md:hidden">
+        <div className="grid grid-cols-5 gap-1 rounded-md border border-slate-200 bg-slate-100 p-1 md:hidden">
           {(
             [
               { id: 'tally', label: 'Tally' },
               { id: 'deck', label: 'Deck' },
-              { id: 'quantity', label: 'Quantity' },
+              { id: 'library', label: 'Library' },
+              { id: 'quantity', label: 'Qty' },
               { id: 'specs', label: 'Specs' },
             ] as Array<{ id: WorkspaceTab; label: string }>
           ).map((item) => (
@@ -686,7 +778,7 @@ export default function App() {
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`min-h-[38px] rounded px-1.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+              className={`min-h-[38px] rounded px-1 py-1.5 text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === item.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -804,12 +896,19 @@ export default function App() {
                   onOpenBatchModal={() => setBatchModalOpen(true)}
                   onOpenPasteModal={() => setPasteModalOpen(true)}
                   onOpenExcelModal={() => setExcelModalOpen(true)}
+                  onOpenInspectionModal={() => setInspectionModalOpen(true)}
                   onLoadSample={() => handleAddBatchRows(SAMPLE_ROWS, 'replace')}
                 />
               </div>
 
-              <div className="min-w-0 lg:col-span-3">
+              <div className="min-w-0 space-y-4 lg:col-span-3">
                 <TallyProgressChart config={activeDoc.config} computed={computed} />
+                <LibraryRecommendationsCard
+                  config={activeDoc.config}
+                  recommendations={libraryRecommendations}
+                  onApplyRecommendation={handleApplyRecommendation}
+                  onOpenLibrary={() => setActiveTab('library')}
+                />
               </div>
             </div>
           </>
@@ -825,6 +924,22 @@ export default function App() {
               handleAddBatchRows(rows, 'replace');
               setActiveTab('tally');
             }}
+          />
+        )}
+
+        {activeTab === 'library' && (
+          <EquipmentLibraryView
+            config={activeDoc.config}
+            library={libraryItems}
+            recommendations={libraryRecommendations}
+            onChangeLibrary={setLibraryItems}
+            onResetLibrary={() => {
+              setLibraryItems(DEFAULT_LIBRARY_ITEMS);
+              setNotice({ type: 'success', text: 'Reset Pipe & XO Library to default rig inventory.' });
+            }}
+            onAddLibraryItemToTally={handleAddLibraryItemToTally}
+            onApplyRecommendation={handleApplyRecommendation}
+            onOpenInspectionModal={() => setInspectionModalOpen(true)}
           />
         )}
 
@@ -882,6 +997,20 @@ export default function App() {
         lengthUnit={activeDoc.config.lengthUnit}
         nextJointNumber={nextJointNumber}
         onImportRows={(rows, mode) => handleAddBatchRows(rows, mode)}
+      />
+
+      <ImportInspectionModal
+        isOpen={inspectionModalOpen}
+        onClose={() => setInspectionModalOpen(false)}
+        config={activeDoc.config}
+        nextJointNumber={nextJointNumber}
+        onImportToTally={(rows, mode, configPatch) => {
+          if (configPatch) {
+            handleUpdateConfig(configPatch);
+          }
+          handleAddBatchRows(rows, mode);
+        }}
+        onSaveToLibrary={handleSaveToLibrary}
       />
 
       <PasteTallyModal
